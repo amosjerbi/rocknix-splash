@@ -1,10 +1,11 @@
 # Custom Boot Splash for ROCKNIX
 
-Replaces the boot splash on this device (Anbernic RG, RK3566, ROCKNIX)
-with your own image, shown from early boot until EmulationStation loads.
+Replaces the boot splash on your device with your own image,
+shown from early boot be it PNG or a GIF 🎉
 
 ## Quick start
 
+0. Install portmaster.
 1. Copy your image to `roms/ports/splash/` as either:
    - `splash.gif` — animated GIF, plays on loop during boot
      (preferred if both files exist; capped at 48 frames)
