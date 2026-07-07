@@ -1,11 +1,10 @@
 # Custom Boot Splash for ROCKNIX
 
-Replaces the boot splash on your device with your own image,
-shown from early boot be it PNG or a GIF 🎉
+Replaces the boot splash on this device (Anbernic RG, RK3566, ROCKNIX)
+with your own image, shown from early boot until EmulationStation loads.
 
 ## Quick start
 
-0. Install portmaster.
 1. Copy your image to `roms/ports/splash/` as either:
    - `splash.gif` — animated GIF, plays on loop during boot
      (preferred if both files exist; capped at 48 frames)
@@ -38,6 +37,10 @@ frame). Replace `splash.gif` and re-run the installer to change it.
 | `ports/splash/splash.png` | Your still splash image (you provide this) |
 | `ports/splash/png2raw.py` | PNG → raw framebuffer converter (pure python, runs on-device) |
 | `ports/splash/gif2raw.py` | GIF → raw frame sequence converter (pure python, runs on-device) |
+| `ports/splash/make_overlay.py` | Builds the initramfs overlay that replaces the early ROCKNIX logo |
+| `/flash/initramfs.overlay` | Tiny cpio loaded by the bootloader over the built-in initramfs |
+| `/storage/.config/extlinux.conf.backup-original` | Backup of extlinux.conf before the INITRD line was added |
+| `/storage/.config/custom-splash-boot.raw` | Optional: dedicated still for the early splash (else GIF frame 1 is used) |
 | `ports/splash/install.log` | Log of every install/restore run |
 | `/storage/.config/custom-splash.raw` | Converted still image |
 | `/storage/.config/custom-splash-frames/` | Converted GIF frames + delays.txt |
@@ -52,10 +55,17 @@ The boot sequence on this device shows three possible splash stages:
    before the first partition) — the installed build has **no logo
    compiled in**, so nothing is shown at this stage.
 2. **Kernel/initramfs** — the initramfs runs `rocknix-splash`, which
-   draws the red/gray ROCKNIX logo to the framebuffer. This binary has
-   the logo hardcoded as SVG path data and lives *inside* the kernel
-   image (`/flash/KERNEL`), so it cannot be changed without building a
-   custom ROCKNIX image. This is the logo you briefly see at power-on.
+   draws the red/gray ROCKNIX logo to the framebuffer. This binary
+   lives *inside* the initramfs embedded in the kernel image
+   (`/flash/KERNEL`). The installer replaces it **without touching the
+   kernel**: `make_overlay.py` builds a tiny uncompressed cpio
+   containing a shell-script stand-in for `rocknix-splash`, and an
+   `INITRD /initramfs.overlay` line added to
+   `/flash/extlinux/extlinux.conf` makes the kernel unpack it *over*
+   the built-in copy. The stand-in draws your splash raw from
+   `/storage` (already mounted at that point in init). If the
+   bootloader ignores the INITRD line, the stock logo simply shows —
+   boot is never at risk.
 3. **EmulationStation** — ROCKNIX launches ES with `--no-splash`, so
    the ES `splash.svg` resource is never displayed at all. Replacing it
    does nothing (first thing we tried).
@@ -65,9 +75,10 @@ This tool works by adding a systemd service that runs early in boot
 image directly to the framebuffer (`/dev/fb0`, 640x480 BGRX), painting
 over the ROCKNIX logo. GIFs are pre-converted to raw frames at install
 time; at boot a tiny shell player loops them (respecting each frame's
-delay) until EmulationStation starts, then exits. The stock logo still
-flashes for the first second or two — that part is baked into the
-kernel and can only be removed with a custom ROCKNIX build.
+delay) until EmulationStation starts, then exits. Combined with the
+initramfs overlay above, your image is on screen from ~2 seconds after
+power-on all the way to EmulationStation — the ROCKNIX logo never
+appears.
 
 The install script converts your image on-device with `png2raw.py` /
 `gif2raw.py` (stdlib-only python: decodes, scales, composites alpha
@@ -77,6 +88,15 @@ the splash service runs.
 
 ## Troubleshooting
 
+- **Early ROCKNIX logo still shows at power-on:** check that
+  `/storage/.config/custom-splash-overlay-ran` exists after a boot —
+  the overlay script creates it. If it's missing, the bootloader
+  didn't load the overlay: verify `/flash/initramfs.overlay` exists
+  and `INITRD /initramfs.overlay` appears in
+  `/flash/extlinux/extlinux.conf` under the LINUX line.
+- **ROCKNIX system update brings the logo back:** updates replace
+  `extlinux.conf` and/or the overlay file. Re-run the installer —
+  it's idempotent and puts everything back.
 - **Still seeing only the ROCKNIX logo?**
   `systemctl status custom-splash.service` — after a successful boot it
   shows `inactive (dead)` with `status=0/SUCCESS` and a `Duration` of a

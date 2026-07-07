@@ -1,10 +1,13 @@
 #!/bin/sh
-# Install Custom Splash (v3 - framebuffer method, PNG + animated GIF)
+# Install Custom Splash (v4 - framebuffer service + initramfs overlay)
 #
 # ROCKNIX starts EmulationStation with --no-splash, so the ES splash.svg
-# is never shown. Instead this installs a small systemd service that
-# draws your image (or plays your GIF) directly on the framebuffer
-# early in boot, replacing the built-in ROCKNIX logo.
+# is never shown. Instead this installs:
+#  - a systemd service that draws your image (or plays your GIF)
+#    directly on the framebuffer early in boot
+#  - an initramfs overlay (INITRD in extlinux.conf) that replaces the
+#    rocknix-splash binary, so the ROCKNIX logo at power-on is replaced
+#    by your image too - no kernel modification involved
 #
 # 1. Put your image in /storage/roms/ports/splash/ as either:
 #      splash.gif  - animated GIF (preferred if both exist)
@@ -124,6 +127,72 @@ systemctl enable custom-splash.service >> "${LOG}" 2>&1 || {
   log "ERROR: could not enable custom-splash.service"
   exit 1
 }
+
+# --- early boot splash (replaces the ROCKNIX logo) -------------------
+# The ROCKNIX logo is drawn by /usr/bin/rocknix-splash inside the
+# initramfs embedded in /flash/KERNEL. We override that one file with
+# a tiny uncompressed cpio overlay loaded via an INITRD line in
+# extlinux.conf - the kernel unpacks it over the built-in initramfs.
+# No kernel modification needed; if the bootloader ignores the INITRD
+# line the stock logo shows and boot is unaffected.
+EXTLINUX="/flash/extlinux/extlinux.conf"
+OVERLAY="/flash/initramfs.overlay"
+EXTLINUX_BAK="/storage/.config/extlinux.conf.backup-original"
+SPLICED_MD5="/storage/.config/custom-splash-spliced.md5"
+
+install_early_splash() {
+  if [ ! -f "${EXTLINUX}" ]; then
+    log "NOTE: ${EXTLINUX} not found - early boot logo replacement"
+    log "      is only supported on extlinux devices, skipping."
+    return 0
+  fi
+  [ -f "${SPLASH_DIR}/make_overlay.py" ] || {
+    log "NOTE: make_overlay.py missing, skipping early boot splash."
+    return 0
+  }
+
+  mount -o remount,rw /flash >> "${LOG}" 2>&1 || {
+    log "NOTE: could not remount /flash rw, skipping early boot splash."
+    return 0
+  }
+
+  # migrate: if this KERNEL was patched in-place by an older method,
+  # restore the pristine backup first (overlay replaces that hack)
+  if [ -f "${SPLICED_MD5}" ] && [ -f /storage/KERNEL.backup-original ]; then
+    CUR_MD5=$(md5sum /flash/KERNEL | cut -d' ' -f1)
+    if [ "${CUR_MD5}" = "$(cat "${SPLICED_MD5}")" ]; then
+      log "Restoring pristine KERNEL from backup (replacing in-place patch)..."
+      cp /storage/KERNEL.backup-original /flash/KERNEL
+      echo "$(md5sum /flash/KERNEL | cut -d' ' -f1)  target/KERNEL" > /flash/KERNEL.md5
+      rm -f "${SPLICED_MD5}"
+    fi
+  fi
+
+  if ! python3 "${SPLASH_DIR}/make_overlay.py" "${OVERLAY}" >> "${LOG}" 2>&1; then
+    log "NOTE: overlay build failed, early boot logo not replaced."
+    mount -o remount,ro /flash >> "${LOG}" 2>&1
+    return 0
+  fi
+
+  if ! grep -q "INITRD /initramfs.overlay" "${EXTLINUX}"; then
+    [ -f "${EXTLINUX_BAK}" ] || cp "${EXTLINUX}" "${EXTLINUX_BAK}"
+    awk '{print} /^[ \t]*LINUX /{print "  INITRD /initramfs.overlay"}' \
+      "${EXTLINUX}" > /tmp/extlinux.conf.new
+    if grep -q "INITRD /initramfs.overlay" /tmp/extlinux.conf.new; then
+      cp /tmp/extlinux.conf.new "${EXTLINUX}"
+      log "Added INITRD overlay to extlinux.conf (backup: ${EXTLINUX_BAK})"
+    else
+      log "NOTE: could not add INITRD line (no LINUX entry found?)"
+    fi
+    rm -f /tmp/extlinux.conf.new
+  fi
+
+  mount -o remount,ro /flash >> "${LOG}" 2>&1
+  rm -f /storage/.config/custom-splash-overlay-ran
+  log "Early boot splash installed - ROCKNIX logo replaced."
+}
+
+install_early_splash
 
 sync
 log "SUCCESS: custom splash installed. Reboot to see it."
