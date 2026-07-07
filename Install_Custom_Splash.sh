@@ -36,14 +36,23 @@ log() {
 
 echo "=== $(date) ===" >> "${LOG}"
 
-# framebuffer geometry
-FB_SIZE=$(cat /sys/class/graphics/fb0/virtual_size 2>/dev/null)
-FB_W=${FB_SIZE%,*}
-FB_H=${FB_SIZE#*,}
+# framebuffer geometry - use the VISIBLE resolution from fbset, not
+# /sys/.../virtual_size: virtual_size is often double-height for
+# double buffering (e.g. 640x960 on a 640x480 panel), which would
+# center the image in the off-screen half and push it off-center.
+FB_GEOM=$(fbset 2>/dev/null | awk '/geometry/ {print $2 " " $3}')
+FB_W=${FB_GEOM% *}
+FB_H=${FB_GEOM#* }
+if [ -z "${FB_W}" ] || [ -z "${FB_H}" ]; then
+  FB_SIZE=$(cat /sys/class/graphics/fb0/virtual_size 2>/dev/null)
+  FB_W=${FB_SIZE%,*}
+  FB_H=${FB_SIZE#*,}
+fi
 if [ -z "${FB_W}" ] || [ -z "${FB_H}" ]; then
   log "ERROR: could not read framebuffer size"
   exit 1
 fi
+log "Using framebuffer resolution ${FB_W}x${FB_H}"
 
 if [ -f "${GIF}" ]; then
   [ -f "${SPLASH_DIR}/gif2raw.py" ] || { log "ERROR: gif2raw.py missing"; exit 1; }
