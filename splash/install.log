@@ -1,0 +1,221 @@
+=== Mon Jul  6 15:51:44 EDT 2026 ===
+No new splash found.
+Put your file at: /storage/roms/ports/splash/splash.svg
+Then run this script again.
+=== Mon Jul  6 15:58:22 EDT 2026 ===
+Original splash backed up to /storage/.config/emulationstation/resources/splash.svg.original
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:02:42 EDT 2026 ===
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:10:34 EDT 2026 ===
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 480x480 PNG -> 640x480 raw (1228800 bytes)
+Created symlink /storage/.config/system.d/multi-user.target.wants/custom-splash.service → /storage/.config/system.d/custom-splash.service.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:12:11 EDT 2026 ===
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 480x480 PNG -> 640x480 raw (1228800 bytes)
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:18:46 EDT 2026 ===
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 2000x1000 PNG -> 640x480 raw (1228800 bytes)
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:24:44 EDT 2026 ===
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:25:39 EDT 2026 ===
+Removed "/storage/.config/system.d/multi-user.target.wants/custom-splash.service".
+Custom splash service removed.
+EmulationStation splash.svg restored from backup.
+DONE: stock boot splash restored. Reboot to see it.
+=== Mon Jul  6 16:26:32 EDT 2026 ===
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+Created symlink /storage/.config/system.d/multi-user.target.wants/custom-splash.service → /storage/.config/system.d/custom-splash.service.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:27:46 EDT 2026 ===
+Removed "/storage/.config/system.d/multi-user.target.wants/custom-splash.service".
+Custom splash service removed.
+EmulationStation splash.svg restored from backup.
+DONE: stock boot splash restored. Reboot to see it.
+=== Mon Jul  6 16:34:18 EDT 2026 ===
+Converting /storage/roms/ports/splash/splash.gif for 640x480 framebuffer (this can take a minute)...
+decoded 12 frames of 480x480
+converted 10/12 frames...
+OK: 12 frames -> /storage/.config/custom-splash-frames (640x480)
+Created symlink /storage/.config/system.d/multi-user.target.wants/custom-splash.service → /storage/.config/system.d/custom-splash.service.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:35:55 EDT 2026 ===
+Converting /storage/roms/ports/splash/splash.gif for 640x480 framebuffer (this can take a minute)...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-frames (640x480)
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:36:26 EDT 2026 ===
+Converting /storage/roms/ports/splash/splash.gif for 640x480 framebuffer (this can take a minute)...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-frames (640x480)
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:37:55 EDT 2026 ===
+Converting /storage/roms/ports/splash/splash.gif for 640x480 framebuffer (this can take a minute)...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-frames (640x480)
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:39:45 EDT 2026 ===
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+SUCCESS: custom splash installed. Reboot to see it.
+=== Mon Jul  6 16:42:44 EDT 2026 ===
+Removed "/storage/.config/system.d/multi-user.target.wants/custom-splash.service".
+Custom splash service removed.
+EmulationStation splash.svg restored from backup.
+DONE: stock boot splash restored. Reboot to see it.
+=== Tue Jul  7 05:39:55 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+Created symlink /storage/.config/system.d/multi-user.target.wants/custom-splash.service → /storage/.config/system.d/custom-splash.service.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Tue Jul  7 05:41:17 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+SUCCESS: custom splash installed. Reboot to see it.
+=== Tue Jul  7 05:42:48 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+SUCCESS: custom splash installed. Reboot to see it.
+=== Tue Jul  7 05:45:30 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.gif for 640x480 framebuffer (this can take a minute)...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-frames (640x480)
+SUCCESS: custom splash installed. Reboot to see it.
+=== Tue Jul  7 16:14:34 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.gif for 640x480 framebuffer (this can take a minute)...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-frames (640x480)
+Restoring pristine KERNEL from backup (replacing in-place patch)...
+OK: overlay cpio written (828 bytes)
+Added INITRD overlay to extlinux.conf (backup: /storage/.config/extlinux.conf.backup-original)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Tue Jul  7 16:21:39 EDT 2026 ===
+Removed "/storage/.config/system.d/multi-user.target.wants/custom-splash.service".
+Custom splash service removed.
+EmulationStation splash.svg restored from backup.
+INITRD overlay line removed from extlinux.conf.
+Early boot splash overlay removed.
+DONE: stock boot splash restored. Reboot to see it.
+=== Tue Jul  7 16:22:49 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+Created symlink /storage/.config/system.d/multi-user.target.wants/custom-splash.service → /storage/.config/system.d/custom-splash.service.
+OK: overlay cpio written (844 bytes)
+Added INITRD overlay to extlinux.conf (backup: /storage/.config/extlinux.conf.backup-original)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Wed Jul  8 17:05:13 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+OK: overlay cpio written (844 bytes)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Wed Jul  8 17:09:34 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+OK: overlay cpio written (844 bytes)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Wed Jul  8 17:10:04 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+OK: overlay cpio written (844 bytes)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Thu Jul  9 00:53:11 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.gif for 640x480 framebuffer (this can take a minute)...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-frames (640x480)
+OK: overlay cpio written (844 bytes)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Thu Jul  9 16:13:35 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.gif for 640x480 framebuffer (this can take a minute)...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-frames (640x480)
+Boot console text hidden (backup: /storage/.config/extlinux.conf.backup-before-hide-text)
+OK: overlay cpio written (844 bytes)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Thu Jul  9 16:14:39 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.gif for 640x480 framebuffer (this can take a minute)...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-frames (640x480)
+Boot console text hidden (backup: /storage/.config/extlinux.conf.backup-before-hide-text)
+OK: overlay cpio written (844 bytes)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Thu Jul  9 16:22:24 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.gif for 640x480 framebuffer (this can take a minute)...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-frames (640x480)
+No pre-splash found; early boot will use the main splash fallback.
+Boot console text hidden (backup: /storage/.config/extlinux.conf.backup-before-hide-text)
+OK: overlay cpio written (844 bytes)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Thu Jul  9 16:24:53 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+Converting /storage/roms/ports/splash/pre-splash.gif first frame for early boot splash...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-boot-frames (640x480)
+Early boot pre-splash set from first GIF frame.
+Boot console text hidden (backup: /storage/.config/extlinux.conf.backup-before-hide-text)
+OK: overlay cpio written (844 bytes)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
+=== Thu Jul  9 16:26:44 EDT 2026 ===
+Removed "/storage/.config/system.d/multi-user.target.wants/custom-splash.service".
+Custom splash service removed.
+EmulationStation splash.svg restored from backup.
+INITRD overlay line removed from extlinux.conf.
+Early boot splash overlay removed.
+DONE: stock boot splash restored. Reboot to see it.
+=== Thu Jul  9 16:28:14 EDT 2026 ===
+Using framebuffer resolution 640x480
+Converting /storage/roms/ports/splash/splash.png for 640x480 framebuffer...
+OK: 640x480 PNG -> 640x480 raw (1228800 bytes)
+Converting /storage/roms/ports/splash/pre-splash.gif first frame for early boot splash...
+decoded 14 frames of 500x375
+converted 10/14 frames...
+OK: 14 frames -> /storage/.config/custom-splash-boot-frames (640x480)
+Early boot pre-splash set from first GIF frame.
+Created symlink /storage/.config/system.d/multi-user.target.wants/custom-splash.service → /storage/.config/system.d/custom-splash.service.
+Boot console text hidden (backup: /storage/.config/extlinux.conf.backup-before-hide-text)
+OK: overlay cpio written (844 bytes)
+Added INITRD overlay to extlinux.conf (backup: /storage/.config/extlinux.conf.backup-original)
+Early boot splash installed - ROCKNIX logo replaced.
+SUCCESS: custom splash installed. Reboot to see it.
