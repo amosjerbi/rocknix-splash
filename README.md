@@ -1,16 +1,15 @@
 # Custom Boot Splash for ROCKNIX
 
-Replaces the Rocknix boot splash logo with your own gif/png.
+Replaces the 2-part Rocknix boot splash logo with your own gif/png.
 
 ## How to use
 
 0. Install Portmaster.
 1. Copy your image to `roms/ports/splash/` as either:
-   - `splash.gif` — animated GIF, plays on loop during boot
-     (preferred if both files exist; capped at 48 frames)
-   - `splash.png` — still image, 8-bit RGB or RGBA, non-interlaced
+   - `pre-splash.png` — 1st part of boot use still image since boot is short (you could use GIF)
+   - `splash.gif` —  2nd part of boot is longer use animated GIF
    - Any size — scaled to fit and centered on a black background
-   - Screen is 640x480, so ~480x480 or 640x480 looks best. Smaller
+   - Screen is 640x480, so ~480x480 or 640x480 or 720x480 (like rgb10x) looks best. Smaller
      GIFs convert faster (a 12-frame 480x480 GIF takes ~20s on-device).
 2. Run **Install_Custom_Splash** from the Ports menu in EmulationStation
    (or via SSH: `sh /storage/roms/ports/Install_Custom_Splash.sh`)
