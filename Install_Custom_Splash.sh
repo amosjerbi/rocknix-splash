@@ -9,10 +9,12 @@
 #    rocknix-splash binary, so the ROCKNIX logo at power-on is replaced
 #    by your image too - no kernel modification involved
 #
-# 1. Put your image in /storage/roms/ports/splash/ as either:
-#      splash.gif  - animated GIF (preferred if both exist)
-#      splash.png  - still image (8-bit RGB/RGBA, non-interlaced)
-#    Any size - it gets scaled and centered on black.
+# 1. Put your images in /storage/roms/ports/splash/:
+#      pre-splash.gif/png - optional early boot image shown first
+#                           (GIF uses its first frame at this stage)
+#      splash.gif/png     - main boot splash shown after storage mounts
+#                           (GIF stays animated)
+#    Any size - images get scaled and centered on black.
 # 2. Run this script from the Ports menu (or via SSH).
 # 3. Reboot.
 #
@@ -21,11 +23,15 @@
 SPLASH_DIR="/storage/roms/ports/splash"
 PNG="${SPLASH_DIR}/splash.png"
 GIF="${SPLASH_DIR}/splash.gif"
+PRE_PNG="${SPLASH_DIR}/pre-splash.png"
+PRE_GIF="${SPLASH_DIR}/pre-splash.gif"
 # NOTE: converted output lives on /storage (mounted by initramfs,
 # available at early boot) - /storage/roms is a later mount and NOT
 # yet available when the splash service runs.
 RAW="/storage/.config/custom-splash.raw"
 FRAMES="/storage/.config/custom-splash-frames"
+BOOT_RAW="/storage/.config/custom-splash-boot.raw"
+BOOT_FRAMES="/storage/.config/custom-splash-boot-frames"
 PLAYER="/storage/.config/custom-splash-play.sh"
 UNIT="/storage/.config/system.d/custom-splash.service"
 LOG="${SPLASH_DIR}/install.log"
@@ -57,27 +63,62 @@ if [ -z "${FB_W}" ] || [ -z "${FB_H}" ]; then
 fi
 log "Using framebuffer resolution ${FB_W}x${FB_H}"
 
-if [ -f "${GIF}" ]; then
-  [ -f "${SPLASH_DIR}/gif2raw.py" ] || { log "ERROR: gif2raw.py missing"; exit 1; }
-  log "Converting ${GIF} for ${FB_W}x${FB_H} framebuffer (this can take a minute)..."
-  if ! python3 "${SPLASH_DIR}/gif2raw.py" "${GIF}" "${FRAMES}" "${FB_W}" "${FB_H}" >> "${LOG}" 2>&1; then
-    log "ERROR: GIF conversion failed - see ${LOG}"
+convert_main_splash() {
+  if [ -f "${GIF}" ]; then
+    [ -f "${SPLASH_DIR}/gif2raw.py" ] || { log "ERROR: gif2raw.py missing"; exit 1; }
+    log "Converting ${GIF} for ${FB_W}x${FB_H} framebuffer (this can take a minute)..."
+    if ! python3 "${SPLASH_DIR}/gif2raw.py" "${GIF}" "${FRAMES}" "${FB_W}" "${FB_H}" >> "${LOG}" 2>&1; then
+      log "ERROR: GIF conversion failed - see ${LOG}"
+      exit 1
+    fi
+    rm -f "${RAW}"
+  elif [ -f "${PNG}" ]; then
+    [ -f "${SPLASH_DIR}/png2raw.py" ] || { log "ERROR: png2raw.py missing"; exit 1; }
+    log "Converting ${PNG} for ${FB_W}x${FB_H} framebuffer..."
+    if ! python3 "${SPLASH_DIR}/png2raw.py" "${PNG}" "${RAW}" "${FB_W}" "${FB_H}" >> "${LOG}" 2>&1; then
+      log "ERROR: PNG conversion failed - see ${LOG}"
+      exit 1
+    fi
+    rm -rf "${FRAMES}"
+  else
+    log "No main splash found. Put splash.gif or splash.png in ${SPLASH_DIR}"
+    log "Then run this script again."
     exit 1
   fi
-  rm -f "${RAW}"
-elif [ -f "${PNG}" ]; then
-  [ -f "${SPLASH_DIR}/png2raw.py" ] || { log "ERROR: png2raw.py missing"; exit 1; }
-  log "Converting ${PNG} for ${FB_W}x${FB_H} framebuffer..."
-  if ! python3 "${SPLASH_DIR}/png2raw.py" "${PNG}" "${RAW}" "${FB_W}" "${FB_H}" >> "${LOG}" 2>&1; then
-    log "ERROR: PNG conversion failed - see ${LOG}"
-    exit 1
+}
+
+convert_pre_splash() {
+  if [ -f "${PRE_GIF}" ]; then
+    [ -f "${SPLASH_DIR}/gif2raw.py" ] || { log "ERROR: gif2raw.py missing"; exit 1; }
+    log "Converting ${PRE_GIF} first frame for early boot splash..."
+    if ! python3 "${SPLASH_DIR}/gif2raw.py" "${PRE_GIF}" "${BOOT_FRAMES}" "${FB_W}" "${FB_H}" >> "${LOG}" 2>&1; then
+      log "ERROR: pre-splash GIF conversion failed - see ${LOG}"
+      exit 1
+    fi
+    if [ -f "${BOOT_FRAMES}/frame_0001.raw" ]; then
+      cp "${BOOT_FRAMES}/frame_0001.raw" "${BOOT_RAW}"
+      log "Early boot pre-splash set from first GIF frame."
+    else
+      log "ERROR: pre-splash GIF produced no first frame"
+      exit 1
+    fi
+    rm -rf "${BOOT_FRAMES}"
+  elif [ -f "${PRE_PNG}" ]; then
+    [ -f "${SPLASH_DIR}/png2raw.py" ] || { log "ERROR: png2raw.py missing"; exit 1; }
+    log "Converting ${PRE_PNG} for early boot splash..."
+    if ! python3 "${SPLASH_DIR}/png2raw.py" "${PRE_PNG}" "${BOOT_RAW}" "${FB_W}" "${FB_H}" >> "${LOG}" 2>&1; then
+      log "ERROR: pre-splash PNG conversion failed - see ${LOG}"
+      exit 1
+    fi
+  else
+    rm -f "${BOOT_RAW}"
+    rm -rf "${BOOT_FRAMES}"
+    log "No pre-splash found; early boot will use the main splash fallback."
   fi
-  rm -rf "${FRAMES}"
-else
-  log "No image found. Put splash.gif or splash.png in ${SPLASH_DIR}"
-  log "Then run this script again."
-  exit 1
-fi
+}
+
+convert_main_splash
+convert_pre_splash
 
 # player: handles both still image and animation; exits as soon as
 # EmulationStation is up (sway takes over the display anyway)
@@ -126,6 +167,60 @@ systemctl daemon-reload >> "${LOG}" 2>&1
 systemctl enable custom-splash.service >> "${LOG}" 2>&1 || {
   log "ERROR: could not enable custom-splash.service"
   exit 1
+}
+
+
+# --- hide framebuffer boot console text -----------------------------
+# Keep boot messages off the LCD so the custom splash remains clean.
+# Serial console stays enabled for recovery/debugging.
+BOOT_CONSOLE_ARGS="quiet loglevel=0 vt.global_cursor_default=0 systemd.show_status=0 rd.udev.log-priority=3 rd.systemd.show_status=0"
+BOOT_TEXT_BAK="/storage/.config/extlinux.conf.backup-before-hide-text"
+
+install_boot_text_hiding() {
+  if [ ! -f "${EXTLINUX}" ]; then
+    log "NOTE: ${EXTLINUX} not found - boot text hiding skipped."
+    return 0
+  fi
+
+  mount -o remount,rw /flash >> "${LOG}" 2>&1 || {
+    log "NOTE: could not remount /flash rw, boot text hiding skipped."
+    return 0
+  }
+
+  [ -f "${BOOT_TEXT_BAK}" ] || cp "${EXTLINUX}" "${BOOT_TEXT_BAK}"
+
+  awk -v extra="${BOOT_CONSOLE_ARGS}" '
+    /^[ \t]*APPEND / {
+      prefix = substr($0, 1, index($0, "APPEND ") + 6)
+      args = substr($0, index($0, "APPEND ") + 7)
+      n = split(args, parts, /[ \t]+/)
+      out = ""
+      for (i = 1; i <= n; i++) {
+        if (parts[i] == "" || parts[i] == "console=tty0") continue
+        if (out != "") out = out " "
+        out = out parts[i]
+        seen[parts[i]] = 1
+      }
+      m = split(extra, wanted, /[ \t]+/)
+      for (i = 1; i <= m; i++) {
+        if (wanted[i] == "" || seen[wanted[i]]) continue
+        if (out != "") out = out " "
+        out = out wanted[i]
+      }
+      print prefix out
+      next
+    }
+    { print }
+  ' "${EXTLINUX}" > /tmp/extlinux.conf.hide-text
+
+  if grep -q "quiet" /tmp/extlinux.conf.hide-text; then
+    cp /tmp/extlinux.conf.hide-text "${EXTLINUX}"
+    log "Boot console text hidden (backup: ${BOOT_TEXT_BAK})"
+  else
+    log "NOTE: boot text hiding failed, extlinux.conf left unchanged."
+  fi
+  rm -f /tmp/extlinux.conf.hide-text
+  mount -o remount,ro /flash >> "${LOG}" 2>&1
 }
 
 # --- early boot splash (replaces the ROCKNIX logo) -------------------
@@ -192,6 +287,7 @@ install_early_splash() {
   log "Early boot splash installed - ROCKNIX logo replaced."
 }
 
+install_boot_text_hiding
 install_early_splash
 
 sync
