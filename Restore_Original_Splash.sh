@@ -1,84 +1,82 @@
 #!/bin/sh
-# Restore Original Splash
-#
-# Removes the custom framebuffer boot splash service so the stock
-# ROCKNIX logo shows again. Also removes the early-boot initramfs
-# overlay (INITRD line + /flash/initramfs.overlay), restores the
-# pristine KERNEL if an older in-place patch is still active, and
-# restores the EmulationStation splash.svg backup if one exists
-# (harmless either way - ES runs with --no-splash on ROCKNIX).
-# Results are logged to /storage/roms/ports/splash/install.log
+# Restore the stock ROCKNIX logo with concise boot status on the LCD.
 
-UNIT="/storage/.config/system.d/custom-splash.service"
-RAW="/storage/.config/custom-splash.raw"
-FRAMES="/storage/.config/custom-splash-frames"
-PLAYER="/storage/.config/custom-splash-play.sh"
-ES_TARGET="/storage/.config/emulationstation/resources/splash.svg"
-ES_BACKUP="${ES_TARGET}.original"
 EXTLINUX="/flash/extlinux/extlinux.conf"
 OVERLAY="/flash/initramfs.overlay"
-SPLICED_MD5="/storage/.config/custom-splash-spliced.md5"
-LOG="/storage/roms/ports/splash/install.log"
+UNIT="/storage/.config/system.d/custom-splash.service"
+PLAYER="/storage/.config/custom-splash-play.sh"
+BACKUP_DIR="/storage/.config"
 
-mkdir -p "$(dirname "${LOG}")"
+if [ "$(id -u)" != "0" ]; then
+  echo "ERROR: run this script as root."
+  exit 1
+fi
 
-log() {
-  echo "$1"
-  echo "$1" >> "${LOG}"
+if [ ! -f "${EXTLINUX}" ]; then
+  echo "ERROR: ${EXTLINUX} was not found."
+  exit 1
+fi
+
+STAMP=$(date +%Y%m%d-%H%M%S)
+BACKUP="${BACKUP_DIR}/extlinux.conf.backup-logo-with-loading-${STAMP}"
+cp "${EXTLINUX}" "${BACKUP}" || exit 1
+
+# Stop the later framebuffer player so it cannot paint over the stock logo.
+systemctl disable custom-splash.service >/dev/null 2>&1 || true
+systemctl stop custom-splash.service >/dev/null 2>&1 || true
+rm -f "${UNIT}" "${PLAYER}"
+systemctl daemon-reload >/dev/null 2>&1 || true
+
+mount -o remount,rw /flash || {
+  echo "ERROR: could not remount /flash read-write."
+  exit 1
 }
 
-echo "=== $(date) ===" >> "${LOG}"
+awk '
+  /^[ \t]*INITRD \/initramfs\.overlay[ \t]*$/ { next }
+  /^[ \t]*APPEND / {
+    prefix = substr($0, 1, index($0, "APPEND ") + 6)
+    args = substr($0, index($0, "APPEND ") + 7)
+    count = split(args, part, /[ \t]+/)
+    out = ""
+    have_quiet = 0
+    have_tty0 = 0
 
-if [ -f "${UNIT}" ]; then
-  systemctl disable custom-splash.service >> "${LOG}" 2>&1
-  rm -f "${UNIT}" "${RAW}" "${PLAYER}"
-  rm -rf "${FRAMES}"
-  systemctl daemon-reload >> "${LOG}" 2>&1
-  log "Custom splash service removed."
-else
-  log "No custom splash service installed."
+    for (i = 1; i <= count; i++) {
+      arg = part[i]
+      if (arg == "") continue
+      if (arg == "quiet") have_quiet = 1
+      if (arg == "console=tty0") have_tty0 = 1
+      if (arg == "loglevel=0" ||
+          arg == "vt.global_cursor_default=0" ||
+          arg == "systemd.show_status=0" ||
+          arg == "rd.systemd.show_status=0" ||
+          arg == "rd.udev.log-priority=3") continue
+      out = out (out == "" ? "" : " ") arg
+    }
+
+    if (!have_quiet) out = out " quiet"
+    if (!have_tty0) out = out " console=tty0"
+    print prefix out
+    next
+  }
+  { print }
+' "${EXTLINUX}" > /tmp/extlinux.conf.logo-loading
+
+if ! grep -q 'console=tty0' /tmp/extlinux.conf.logo-loading; then
+  rm -f /tmp/extlinux.conf.logo-loading
+  mount -o remount,ro /flash >/dev/null 2>&1 || true
+  echo "ERROR: failed to build the restored boot configuration."
+  exit 1
 fi
 
-if [ -f "${ES_BACKUP}" ]; then
-  cp "${ES_BACKUP}" "${ES_TARGET}"
-  log "EmulationStation splash.svg restored from backup."
-fi
+cp /tmp/extlinux.conf.logo-loading "${EXTLINUX}"
+rm -f /tmp/extlinux.conf.logo-loading "${OVERLAY}"
+mount -o remount,ro /flash || true
 
-# --- undo early boot splash (bring the ROCKNIX logo back) ------------
-if [ -f "${OVERLAY}" ] || grep -q "INITRD /initramfs.overlay" "${EXTLINUX}" 2>/dev/null; then
-  if mount -o remount,rw /flash >> "${LOG}" 2>&1; then
-    if grep -q "INITRD /initramfs.overlay" "${EXTLINUX}" 2>/dev/null; then
-      grep -v "INITRD /initramfs.overlay" "${EXTLINUX}" > /tmp/extlinux.conf.new
-      cp /tmp/extlinux.conf.new "${EXTLINUX}"
-      rm -f /tmp/extlinux.conf.new
-      log "INITRD overlay line removed from extlinux.conf."
-    fi
-    rm -f "${OVERLAY}"
-    mount -o remount,ro /flash >> "${LOG}" 2>&1
-    log "Early boot splash overlay removed."
-  else
-    log "ERROR: could not remount /flash rw - overlay NOT removed."
-  fi
-fi
-
-# older in-place KERNEL patch: restore the pristine backup
-if [ -f "${SPLICED_MD5}" ] && [ -f /storage/KERNEL.backup-original ]; then
-  CUR_MD5=$(md5sum /flash/KERNEL | cut -d' ' -f1)
-  if [ "${CUR_MD5}" = "$(cat "${SPLICED_MD5}")" ]; then
-    if mount -o remount,rw /flash >> "${LOG}" 2>&1; then
-      cp /storage/KERNEL.backup-original /flash/KERNEL
-      echo "$(md5sum /flash/KERNEL | cut -d' ' -f1)  target/KERNEL" > /flash/KERNEL.md5
-      rm -f "${SPLICED_MD5}"
-      mount -o remount,ro /flash >> "${LOG}" 2>&1
-      log "Pristine KERNEL restored from backup."
-    else
-      log "ERROR: could not remount /flash rw - KERNEL NOT restored."
-    fi
-  fi
-fi
-
-rm -f /storage/.config/custom-splash-overlay-ran /storage/.config/custom-splash-boot.raw
-
+rm -f /storage/.config/custom-splash-overlay-ran
 sync
-log "DONE: stock boot splash restored. Reboot to see it."
-exit 0
+
+echo "Stock ROCKNIX logo and LCD loading text restored."
+echo "Backup: ${BACKUP}"
+echo "Reboot to apply the changes."
