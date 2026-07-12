@@ -3,17 +3,17 @@
 #
 # ROCKNIX starts EmulationStation with --no-splash, so the ES splash.svg
 # is never shown. Instead this installs:
-#  - a systemd service that draws your image (or plays your GIF)
+#  - a systemd service that draws your image or plays your GIF/MP4
 #    directly on the framebuffer early in boot
 #  - an initramfs overlay (INITRD in extlinux.conf) that replaces the
 #    rocknix-splash binary, so the ROCKNIX logo at power-on is replaced
 #    by your image too - no kernel modification involved
 #
 # 1. Put your images in /storage/roms/ports/splash/:
-#      pre-splash.gif/png - optional early boot image shown first
-#                           (GIF uses its first frame at this stage)
-#      splash.gif/png     - main boot splash shown after storage mounts
-#                           (GIF stays animated)
+#      pre-splash.mp4/gif/png - optional early boot image shown first
+#                               (animations use their first frame here)
+#      splash.mp4/gif/png     - main splash shown after storage mounts
+#                               (MP4/GIF stays animated)
 #    Any size - images get scaled and centered on black.
 # 2. Run this script from the Ports menu (or via SSH).
 # 3. Reboot.
@@ -23,8 +23,10 @@
 SPLASH_DIR="/storage/roms/ports/splash"
 PNG="${SPLASH_DIR}/splash.png"
 GIF="${SPLASH_DIR}/splash.gif"
+MP4="${SPLASH_DIR}/splash.mp4"
 PRE_PNG="${SPLASH_DIR}/pre-splash.png"
 PRE_GIF="${SPLASH_DIR}/pre-splash.gif"
+PRE_MP4="${SPLASH_DIR}/pre-splash.mp4"
 # NOTE: converted output lives on /storage (mounted by initramfs,
 # available at early boot) - /storage/roms is a later mount and NOT
 # yet available when the splash service runs.
@@ -32,6 +34,9 @@ RAW="/storage/.config/custom-splash.raw"
 FRAMES="/storage/.config/custom-splash-frames"
 BOOT_RAW="/storage/.config/custom-splash-boot.raw"
 BOOT_FRAMES="/storage/.config/custom-splash-boot-frames"
+VIDEO="/storage/.config/custom-splash.mp4"
+LAST_RAW="/storage/.config/custom-splash-last.raw"
+DURATION_FILE="/storage/.config/custom-splash-duration"
 PLAYER="/storage/.config/custom-splash-play.sh"
 UNIT="/storage/.config/system.d/custom-splash.service"
 LOG="${SPLASH_DIR}/install.log"
@@ -64,7 +69,36 @@ fi
 log "Using framebuffer resolution ${FB_W}x${FB_H}"
 
 convert_main_splash() {
-  if [ -f "${GIF}" ]; then
+  if [ -f "${MP4}" ]; then
+    command -v mpv >/dev/null 2>&1 || { log "ERROR: mpv is required for MP4 splash playback"; exit 1; }
+    log "Installing ${MP4} for original MP4 playback..."
+    cp "${MP4}" "${VIDEO}" || { log "ERROR: could not copy MP4 splash"; exit 1; }
+    MP4_DURATION=$(mpv --no-config --no-audio --vo=null --frames=1 \
+      --term-playing-msg='${=duration}' "${MP4}" 2>/dev/null | \
+      awk '/^[0-9]+([.][0-9]+)?$/ { print; exit }')
+    [ -n "${MP4_DURATION}" ] || { log "ERROR: could not read MP4 duration"; exit 1; }
+    echo "${MP4_DURATION}" > "${DURATION_FILE}"
+    LAST_TMP="/tmp/custom-splash-last-frame"
+    rm -rf "${LAST_TMP}"
+    mkdir -p "${LAST_TMP}"
+    if ! mpv --no-config --no-audio --vo=image --vo-image-format=png \
+      --vo-image-outdir="${LAST_TMP}" --start=-0.1 --frames=1 \
+      --vf="lavfi=[scale=${FB_W}:${FB_H}:force_original_aspect_ratio=decrease,pad=${FB_W}:${FB_H}:(ow-iw)/2:(oh-ih)/2]" \
+      "${MP4}" >> "${LOG}" 2>&1; then
+      log "ERROR: could not extract MP4 final frame"
+      exit 1
+    fi
+    LAST_PNG=$(find "${LAST_TMP}" -type f -name '*.png' | head -n 1)
+    if [ -z "${LAST_PNG}" ] || ! python3 "${SPLASH_DIR}/png2raw.py" \
+      "${LAST_PNG}" "${LAST_RAW}" "${FB_W}" "${FB_H}" >> "${LOG}" 2>&1; then
+      log "ERROR: could not convert MP4 final frame"
+      exit 1
+    fi
+    rm -rf "${LAST_TMP}"
+    log "MP4 final frame prepared for seamless boot handoff."
+    rm -f "${RAW}"
+    rm -rf "${FRAMES}"
+  elif [ -f "${GIF}" ]; then
     [ -f "${SPLASH_DIR}/gif2raw.py" ] || { log "ERROR: gif2raw.py missing"; exit 1; }
     log "Converting ${GIF} for ${FB_W}x${FB_H} framebuffer (this can take a minute)..."
     if ! python3 "${SPLASH_DIR}/gif2raw.py" "${GIF}" "${FRAMES}" "${FB_W}" "${FB_H}" >> "${LOG}" 2>&1; then
@@ -72,6 +106,7 @@ convert_main_splash() {
       exit 1
     fi
     rm -f "${RAW}"
+    rm -f "${VIDEO}"
   elif [ -f "${PNG}" ]; then
     [ -f "${SPLASH_DIR}/png2raw.py" ] || { log "ERROR: png2raw.py missing"; exit 1; }
     log "Converting ${PNG} for ${FB_W}x${FB_H} framebuffer..."
@@ -80,15 +115,35 @@ convert_main_splash() {
       exit 1
     fi
     rm -rf "${FRAMES}"
+    rm -f "${VIDEO}"
   else
-    log "No main splash found. Put splash.gif or splash.png in ${SPLASH_DIR}"
+    log "No main splash found. Put splash.mp4, splash.gif, or splash.png in ${SPLASH_DIR}"
     log "Then run this script again."
     exit 1
   fi
 }
 
 convert_pre_splash() {
-  if [ -f "${PRE_GIF}" ]; then
+  if [ -f "${PRE_MP4}" ]; then
+    command -v mpv >/dev/null 2>&1 || { log "ERROR: mpv is required to read pre-splash.mp4"; exit 1; }
+    [ -f "${SPLASH_DIR}/png2raw.py" ] || { log "ERROR: png2raw.py missing"; exit 1; }
+    PRE_TMP="/tmp/custom-splash-first-frame"
+    rm -rf "${PRE_TMP}"
+    mkdir -p "${PRE_TMP}"
+    log "Extracting ${PRE_MP4} first frame for early boot splash..."
+    if ! mpv --no-config --no-audio --vo=image --vo-image-format=png \
+      --vo-image-outdir="${PRE_TMP}" --frames=1 "${PRE_MP4}" >> "${LOG}" 2>&1; then
+      log "ERROR: pre-splash MP4 frame extraction failed - see ${LOG}"
+      exit 1
+    fi
+    PRE_FRAME=$(find "${PRE_TMP}" -type f -name '*.png' | head -n 1)
+    if [ -z "${PRE_FRAME}" ] || ! python3 "${SPLASH_DIR}/png2raw.py" "${PRE_FRAME}" "${BOOT_RAW}" "${FB_W}" "${FB_H}" >> "${LOG}" 2>&1; then
+      log "ERROR: could not convert pre-splash MP4 first frame"
+      exit 1
+    fi
+    rm -rf "${PRE_TMP}" "${BOOT_FRAMES}"
+    log "Early boot pre-splash set from first MP4 frame."
+  elif [ -f "${PRE_GIF}" ]; then
     [ -f "${SPLASH_DIR}/gif2raw.py" ] || { log "ERROR: gif2raw.py missing"; exit 1; }
     log "Converting ${PRE_GIF} first frame for early boot splash..."
     if ! python3 "${SPLASH_DIR}/gif2raw.py" "${PRE_GIF}" "${BOOT_FRAMES}" "${FB_W}" "${FB_H}" >> "${LOG}" 2>&1; then
@@ -126,9 +181,25 @@ cat > "${PLAYER}" << 'EOF'
 #!/bin/sh
 FRAMES="/storage/.config/custom-splash-frames"
 RAW="/storage/.config/custom-splash.raw"
+VIDEO="/storage/.config/custom-splash.mp4"
+LAST_RAW="/storage/.config/custom-splash-last.raw"
+DURATION_FILE="/storage/.config/custom-splash-duration"
 FB="/dev/fb0"
 
-if [ -f "${FRAMES}/delays.txt" ]; then
+if [ -f "${VIDEO}" ] && command -v mpv >/dev/null 2>&1; then
+  # This service is Type=oneshot and ordered before essway, so MPV owns
+  # DRM only while the original file plays and releases it before Sway.
+  PRELOAD_PID=""
+  if [ -f "${LAST_RAW}" ] && [ -f "${DURATION_FILE}" ]; then
+    PRELOAD_DELAY=$(awk '{ d=$1-0.15; if (d<0) d=0; printf "%.3f", d }' "${DURATION_FILE}")
+    ( sleep "${PRELOAD_DELAY}"; cat "${LAST_RAW}" > "${FB}" 2>/dev/null ) &
+    PRELOAD_PID=$!
+  fi
+  timeout -s KILL 60 mpv --no-config --really-quiet --vo=drm --ao=alsa \
+    --fs --keepaspect=yes "${VIDEO}"
+  [ -n "${PRELOAD_PID}" ] && wait "${PRELOAD_PID}" 2>/dev/null
+  [ -f "${LAST_RAW}" ] && cat "${LAST_RAW}" > "${FB}" 2>/dev/null
+elif [ -f "${FRAMES}/delays.txt" ]; then
   END=$(( $(date +%s) + 45 ))
   while [ "$(date +%s)" -lt "${END}" ]; do
     i=0
@@ -137,7 +208,6 @@ if [ -f "${FRAMES}/delays.txt" ]; then
       f=$(printf "${FRAMES}/frame_%04d.raw" "${i}")
       [ -f "${f}" ] || break
       cat "${f}" > "${FB}" 2>/dev/null || exit 0
-      pgrep -f emulationstation >/dev/null && exit 0
       sleep "${d}"
     done < "${FRAMES}/delays.txt"
   done
@@ -152,11 +222,11 @@ mkdir -p "$(dirname "${UNIT}")"
 cat > "${UNIT}" << 'EOF'
 [Unit]
 Description=Custom boot splash
-After=local-fs.target
+After=local-fs.target sound.target pipewire.service pipewire-pulse.service
 Before=essway.service
 
 [Service]
-Type=simple
+Type=oneshot
 ExecStart=/storage/.config/custom-splash-play.sh
 
 [Install]
