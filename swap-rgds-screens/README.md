@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="swap.jpg" alt="demo" width="320" />
+  <img src="swap.jpg" alt="swap" width="320" />
 </p>
 
 # Swap RGDS Screens
