@@ -1,10 +1,6 @@
 RetroArch configuration backup
 ==============================
 
-Source device: 192.168.0.106
-Source path:   /storage/.config/retroarch
-Extracted:     2026-08-14
-
 Included:
 - retroarch.cfg
 - retroarch-core-options.cfg
