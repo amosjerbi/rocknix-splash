@@ -2,9 +2,10 @@
   <img src="drastic15x.jpg" alt="drastic" width="320" />
 </p>
 
-# DraStic 1.5x Menu Installer
+# DraStic 2.2x script
 
-`drastic15x menu.sh` installs an enlarged DraStic pause menu for ARM64 ROCKNIX dual-screen devices.
+`drastic22x.sh` installs an enlarged DraStic pause menu for ARM64 ROCKNIX dual-screen devices.
+You could customize the amount of zoom inside the script if you want.
 
 ## What It Changes
 
