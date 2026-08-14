@@ -28,6 +28,3 @@ The default destination is /storage/.config/retroarch. To install elsewhere:
 
 The installer verifies the payload checksum and backs up only settings files
 that it replaces. Saves and other unrelated RetroArch data are untouched.
-
-Payload SHA-256:
-695b413ff9c238c070bff561bd5d1f8c1686cfdc432a851ddc6e174c29c58cd2
