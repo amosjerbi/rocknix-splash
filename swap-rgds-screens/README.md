@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="/swap.jpg" alt="demo" width="320" />
+</p>
+
 # Swap RGDS Screens
 
 `Swap RGDS Screens.sh` toggles the ROCKNIX EmulationStation launcher between the RGDS top and bottom displays.
