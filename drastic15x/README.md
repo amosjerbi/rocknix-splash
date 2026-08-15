@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="drastic15x.jpg" alt="drastic" width="420" />
+  <img src="drastic.jpg" alt="drastic" width="420" />
 </p>
 
 # DraStic 2.2x script
